@@ -90,10 +90,13 @@ class Game:
     def run(self):
 
         self.address = (self.preferences.get("server"), self.preferences.get("port"))
+
+        #initialisation du snakePost
         self.client = SnakeChan()
 
         self.client.connect(self.address, self.preferences.get("color"), self.preferences.get("nickname"))
         self.com = SnakePost(self.client, self.preferences.get("nickname"))
+
 
         whole_second=0
         self.running=True
@@ -123,13 +126,6 @@ class Game:
                 for snake in self.others:
                     self.others[snake].blink()
 
-            #check if snake has eaten
-            # if self.me.ready:
-            #     if self.f.check(self.me.head):
-            #         self.me.grow(Constants.GROW)
-            #         self.scores.inc_score(self.nickname,1)
-
-
             #cleanup background
             self.gamescreen.fill(Constants.COLOR_BG)
 
@@ -138,9 +134,10 @@ class Game:
 
             #draw all snakes positions as last seen by the server
             #we do not compute their positions ourselves!
-            #self.me.draw(self.gamescreen)
+
             for snake in self.others:
                 self.others[snake].draw(self.gamescreen)
+
             #draw food
             self.f.draw(self.gamescreen)
 
@@ -153,29 +150,33 @@ class Game:
 
             pygame.display.update()
 
+            # Sur message du serveur...
             data, addr = self.com.listen()
+
             if data is not None:
+
                 dat = json.loads(data)
+
                 for key in dat:
+
                     if key == 'players_info':
-                        #update players and scores
+                        #On met a jour les scores et les etats des joueurs
                         for player in dat[key]:
 
-                            if not self.others.get(player[0]):
-                                print "New player ! " + player[0]
+                            if not self.others.get(player[0]): # Si on a pas de joueur de ce nom, on l'ajoute
                                 self.others[player[0]] = Snake(color=pygame.color.THECOLORS[player[1]], nickname=player[0])
                                 self.scores.new_score(player[0], self.others.get(player[0]).color)
 
-                            else:
+                            else: # On a deja le joueur, on update son etat
                                 if player[3]:
                                     self.others[player[0]].set_ready()
                                 else:
                                     self.others[player[0]].set_unready()
+                            # on update les scores
                             self.scores.set_score(player[0], player[2])
-                    elif key == "snakes":
-                        for val in dat[key]:
-                            if len(val[1]) > 0 and self.others[val[0]]:
-                                self.others[val[0]].setBody(val[1])
+
+                    elif key == "snakes": # message de position des joueurs
+
                         # on regarde si il y a des serpents a enlever
                         if len(dat[key]) != len(self.others):
                             for nickname in self.others.keys():
@@ -186,11 +187,19 @@ class Game:
                                 if not connected:
                                     del self.others[nickname]
                                     self.scores.del_score(nickname)
-                    elif key == "foods":
+
+                        for val in dat[key]:
+                            # si on a ce joeur et que ses positions ne sont pas vides (premier message)
+                            if len(val[1]) > 0 and self.others[val[0]]:
+                                self.others[val[0]].setBody(val[1])
+
+                    elif key == "foods": # les pommes envoyees par le serveur
                         self.f.set_positions(dat[key])
-                    elif key == "grow":
+
+                    elif key == "grow": # Un serpent a mange une pomme !
                         if dat[key] == self.preferences.get("nickname"):
                             self.me.grow(Constants.GROW)
-                    elif key == "game_over":
+
+                    elif key == "game_over": # Desole, c'est perdu
                         if dat[key] == self.preferences.get("nickname"):
                             self.me.restart()

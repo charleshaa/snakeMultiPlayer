@@ -121,7 +121,6 @@ class Snake(object):
 
     def blink(self):
         if not self.ready:
-            print "Not ready"
             if self.current_color == self.color:
                 self.setBodyColor((0,0,0))
             elif self.current_color == (0,0,0):

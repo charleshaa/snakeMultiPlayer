@@ -32,6 +32,9 @@ class Constants:
 
     START_LENGTH = 5
 
+    # player timeout in seconds
+    PLAYER_TIMEOUT = 2
+
     #by how much the snake will grow for each apple
     GROW = 2
 

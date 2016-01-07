@@ -6,4 +6,4 @@ class Player:
         self.score = 0
         self.ready = False
         self.positions = []
-        self.last_message = 0
+        self.last_message = 0 # timestamp pour le timeout
